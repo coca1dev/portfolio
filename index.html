@@ -1018,7 +1018,10 @@
           entries.forEach(function (entry) {
             if (entry.isIntersecting) {
               entry.target.classList.add('is-visible');
-              observer.unobserve(entry.target); // анимируем элемент один раз
+            } else {
+              // Убираем класс, когда элемент ушёл из viewport,
+              // чтобы анимация снова проигрывалась при возврате.
+              entry.target.classList.remove('is-visible');
             }
           });
         }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
