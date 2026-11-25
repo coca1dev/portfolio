@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#05080f">
+  <title>[Название] — деньги под контролем</title>
+  <meta name="description" content="Сервис управления личными финансами и инвестициями: прозрачная аналитика, бюджеты и безопасность без скрытых комиссий.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="[Название] — деньги под контролем">
+  <meta property="og:description" content="Личные финансы и инвестиции: прозрачно, безопасно, без сюрпризов.">
+  <meta property="og:locale" content="ru_RU">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <!-- Google Fonts — единственное внешнее подключение, разрешённое условиями проекта -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===== Токены: жёсткий, угловатый, как интерфейс терминала ===== */
+    :root {
+      --bg: #05080f;
+      --panel: #0b1220;
+      --panel-2: #101a2c;
+      --line: #1d2a3e;
+      --text: #f4f7fb;
+      --muted: #8a9ab2;
+      --acid: #c8ff4d;
+      --blue: #4d8dff;
+      --radius: 2px;
+      --ease: cubic-bezier(.2, .7, .2, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 104px; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(77, 141, 255, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(77, 141, 255, .045) 1px, transparent 1px),
+        radial-gradient(760px 420px at 92% 4%, rgba(200, 255, 77, .09), transparent 62%);
+      background-size: 40px 40px, 40px 40px, auto;
+      background-attachment: fixed;
+    }
+
+    h1, h2, h3, p, ul, blockquote { margin: 0; }
+    ul { padding: 0; list-style: none; }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+    ::selection { background: var(--acid); color: #05080f; }
+    :focus-visible { outline: 2px solid var(--acid); outline-offset: 3px; }
+
+    .container { width: min(100% - 48px, 1180px); margin-inline: auto; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+    .display { font-family: "Space Grotesk", "Inter", sans-serif; letter-spacing: -.055em; font-weight: 600; }
+    .skip-link { position: absolute; left: 12px; top: -60px; z-index: 200; padding: 10px 14px; background: var(--acid); color: #05080f; transition: top .2s; }
+    .skip-link:focus { top: 12px; }
+
+    .section { padding: 104px 0; border-top: 1px solid var(--line); }
+    .section__head { max-width: 660px; margin-bottom: 48px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 9px; margin-bottom: 18px;
+      font-family: "JetBrains Mono", monospace; font-size: 11px;
+      letter-spacing: .2em; text-transform: uppercase; color: var(--acid);
+    }
+    .eyebrow::before { content: ""; width: 8px; height: 8px; background: var(--acid); }
+    h1 { font-size: clamp(2.9rem, 6.2vw, 5rem); line-height: 1.02; }
+    h2 { font-size: clamp(2.1rem, 4vw, 3.4rem); line-height: 1.08; }
+    h3 { font-size: 1.15rem; line-height: 1.3; }
+    .lead { font-size: clamp(1rem, 1.5vw, 1.12rem); color: var(--muted); max-width: 560px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      min-height: 50px; padding: 0 22px; border: 1px solid transparent; border-radius: var(--radius);
+      font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700;
+      letter-spacing: .04em; text-transform: uppercase; cursor: pointer;
+      transition: background .22s, color .22s, border-color .22s, transform .22s var(--ease), box-shadow .22s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn--acid { background: var(--acid); color: #05080f; }
+    .btn--acid:hover { background: #dcff87; box-shadow: 0 0 26px rgba(200, 255, 77, .28); }
+    .btn--line { border-color: var(--line); background: transparent; color: var(--text); }
+    .btn--line:hover { border-color: var(--acid); color: var(--acid); }
+
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .55s var(--ease), transform .55s var(--ease); }
+    .reveal.is-visible { opacity: 1; transform: none; }
+
+    /* ===== Тикер ===== */
+    .ticker { overflow: hidden; border-bottom: 1px solid var(--line); background: #080d17; }
+    .ticker__track { display: flex; width: max-content; animation: ticker 30s linear infinite; }
+    .ticker__group { display: flex; flex: 0 0 auto; }
+    .ticker__item {
+      display: inline-flex; align-items: center; gap: 10px; padding: 9px 22px;
+      font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .06em;
+      color: var(--muted); white-space: nowrap; border-right: 1px solid var(--line);
+    }
+    .ticker__item b { color: var(--text); font-weight: 500; }
+    .ticker__item em { font-style: normal; color: var(--acid); }
+    .ticker__item .down { color: #ff8a8a; }
+    @keyframes ticker { to { transform: translateX(-50%); } }
+
+    /* ===== Хедер ===== */
+    .site-header { position: sticky; top: 0; z-index: 100; background: rgba(5, 8, 15, .94); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .header__inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 70px; }
+    .logo { display: inline-flex; align-items: center; gap: 11px; font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -.02em; }
+    .logo__mark { display: grid; place-items: center; width: 26px; height: 26px; background: var(--acid); color: #05080f; font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 14px; }
+    .nav { display: flex; align-items: center; gap: 30px; }
+    .nav a { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
+    .nav a:hover { color: var(--acid); }
+    .header__actions .btn { min-height: 40px; padding: 0 16px; font-size: 11px; }
+
+    .burger { display: none; position: relative; width: 40px; height: 40px; padding: 0; border: 1px solid var(--line); background: transparent; cursor: pointer; }
+    .burger span { position: absolute; left: 9px; width: 20px; height: 2px; background: var(--text); transition: transform .25s; }
+    .burger span:first-child { top: 16px; }
+    .burger span:last-child { top: 22px; }
+    .burger[aria-expanded="true"] span:first-child { transform: translateY(3px) rotate(45deg); }
+    .burger[aria-expanded="true"] span:last-child { transform: translateY(-3px) rotate(-45deg); }
+
+    /* ===== Hero ===== */
+    .hero { padding: 96px 0 88px; }
+    .hero__grid { display: grid; grid-template-columns: 1.04fr .96fr; gap: 68px; align-items: center; }
+    .hero h1 { margin-bottom: 26px; }
+    .hero h1 em { font-style: normal; color: var(--acid); }
+    .hero h1 u { text-decoration-thickness: 3px; text-underline-offset: 10px; text-decoration-color: rgba(200, 255, 77, .4); }
+    .hero .lead { max-width: 500px; }
+    .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+    .hero__status { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 36px; font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--muted); }
+    .hero__status span { display: inline-flex; align-items: center; gap: 8px; }
+    .hero__status i { width: 7px; height: 7px; background: var(--acid); box-shadow: 0 0 10px var(--acid); }
+
+    /* ===== Терминал-дашборд ===== */
+    .terminal { border: 1px solid #2b3d57; background: var(--panel); box-shadow: 18px 18px 0 rgba(200, 255, 77, .06), 0 30px 80px rgba(0, 0, 0, .55); }
+    .terminal__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel-2); font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--muted); }
+    .terminal__dots { display: flex; gap: 5px; }
+    .terminal__dots i { width: 7px; height: 7px; border: 1px solid #3c4d67; }
+    .terminal__dots i:first-child { background: var(--acid); border-color: var(--acid); }
+    .terminal__body { padding: 24px; }
+    .terminal__prompt { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--muted); }
+    .terminal__prompt b { color: var(--acid); font-weight: 500; }
+    .terminal__balance { margin: 16px 0 6px; }
+    .terminal__balance small { display: block; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .terminal__balance strong { display: block; margin-top: 8px; font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: clamp(1.9rem, 3.4vw, 2.7rem); letter-spacing: -.05em; color: var(--text); }
+    .terminal__delta { display: inline-block; margin-top: 8px; padding: 3px 8px; border: 1px solid rgba(200, 255, 77, .4); color: var(--acid); font-family: "JetBrains Mono", monospace; font-size: 11px; }
+    .bars { display: flex; align-items: flex-end; gap: 5px; height: 118px; margin: 26px 0 8px; padding-bottom: 1px; border-bottom: 1px solid var(--line); }
+    .bars__bar { flex: 1; height: var(--h); min-height: 4px; background: linear-gradient(180deg, var(--acid), rgba(200, 255, 77, .12)); opacity: .85; transition: opacity .2s; }
+    .bars__bar:hover { opacity: 1; }
+    .bars__axis { display: flex; justify-content: space-between; font-family: "JetBrains Mono", monospace; font-size: 10px; color: #64748b; }
+    .terminal__tiles { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); margin-top: 22px; }
+    .terminal__tiles div { padding: 12px; border-right: 1px solid var(--line); }
+    .terminal__tiles div:last-child { border-right: 0; }
+    .terminal__tiles small { display: block; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .terminal__tiles b { display: block; margin-top: 6px; font-family: "JetBrains Mono", monospace; font-size: 14px; font-weight: 500; }
+    .terminal__log { margin-top: 18px; border-top: 1px solid var(--line); }
+    .terminal__log li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 2px; border-bottom: 1px solid var(--line); font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--muted); }
+    .terminal__log li b { color: var(--text); font-weight: 500; }
+    .terminal__log li b.plus { color: var(--acid); }
+
+    /* ===== Метрики ===== */
+    .metrics { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #070c15; }
+    .metrics__grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .metric { padding: 30px 24px; border-right: 1px solid var(--line); }
+    .metric:last-child { border-right: 0; }
+    .metric strong { display: block; font-family: "JetBrains Mono", monospace; font-size: clamp(1.7rem, 3.2vw, 2.5rem); letter-spacing: -.06em; color: var(--acid); }
+    .metric span { display: block; margin-top: 8px; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+    /* ===== Возможности ===== */
+    .features__grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+    .feature { position: relative; min-height: 230px; padding: 28px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); transition: background .25s; }
+    .feature:hover { background: rgba(200, 255, 77, .045); }
+    .feature:hover::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--acid); }
+    .feature__num { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--acid); }
+    .feature__icon { margin: 26px 0 20px; color: var(--blue); }
+    .feature h3 { margin-bottom: 9px; }
+    .feature p { font-size: 14.5px; color: var(--muted); }
+
+    /* ===== Безопасность ===== */
+    .security { background: linear-gradient(180deg, rgba(77, 141, 255, .05), transparent 70%); }
+    .security__grid { display: grid; grid-template-columns: .92fr 1.08fr; gap: 72px; align-items: center; }
+    .security__art { position: relative; width: min(100%, 360px); aspect-ratio: 1; margin-inline: auto; display: grid; place-items: center; }
+    .security__art span { position: absolute; border: 1px solid var(--line); }
+    .security__art .s1 { inset: 0; }
+    .security__art .s2 { inset: 14%; border-color: rgba(200, 255, 77, .35); }
+    .security__art .s3 { inset: 28%; border-color: rgba(77, 141, 255, .5); transform: rotate(45deg); }
+    .security__art .s4 { inset: 40%; background: var(--acid); border: 0; box-shadow: 0 0 60px rgba(200, 255, 77, .45); }
+    .security__art::before, .security__art::after { content: ""; position: absolute; background: var(--line); }
+    .security__art::before { left: 0; right: 0; top: 50%; height: 1px; }
+    .security__art::after { top: 0; bottom: 0; left: 50%; width: 1px; }
+    .security__list { display: grid; gap: 0; border-top: 1px solid var(--line); }
+    .secure-item { display: grid; grid-template-columns: 34px 1fr; gap: 16px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+    .secure-item__mark { font-family: "JetBrains Mono", monospace; color: var(--acid); font-size: 13px; }
+    .secure-item h3 { margin-bottom: 6px; }
+    .secure-item p { font-size: 14.5px; color: var(--muted); }
+
+    /* ===== Шаги ===== */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; position: relative; }
+    .steps::before { content: ""; position: absolute; top: 18px; left: 12%; right: 12%; border-top: 1px dashed #2f4160; }
+    .step { position: relative; z-index: 1; }
+    .step__num { display: inline-block; margin-bottom: 22px; padding: 6px 10px; border: 1px solid var(--line); background: var(--bg); font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--acid); }
+    .step h3 { margin-bottom: 8px; }
+    .step p { font-size: 14.5px; color: var(--muted); }
+
+    /* ===== Тарифы ===== */
+    .pricing__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: stretch; }
+    .plan { display: flex; flex-direction: column; padding: 30px; background: var(--panel); border: 1px solid var(--line); }
+    .plan--featured { border-color: var(--acid); box-shadow: 0 0 0 1px rgba(200, 255, 77, .25); }
+    .plan__badge { display: inline-block; margin: -30px -30px 26px; padding: 8px 30px; background: var(--acid); color: #05080f; font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; text-align: center; }
+    .plan h3 { font-family: "JetBrains Mono", monospace; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+    .plan__price { margin: 20px 0 24px; font-family: "JetBrains Mono", monospace; font-size: 2.3rem; letter-spacing: -.06em; }
+    .plan__price small { font-size: 12px; color: var(--muted); letter-spacing: 0; }
+    .plan ul { display: grid; gap: 12px; margin-bottom: 30px; }
+    .plan li { display: flex; gap: 10px; font-size: 14px; color: var(--muted); }
+    .plan li::before { content: "+"; color: var(--acid); font-family: "JetBrains Mono", monospace; }
+    .plan .btn { margin-top: auto; width: 100%; }
+
+    /* ===== CTA ===== */
+    .cta-band { border-top: 1px solid var(--line); padding: 0; }
+    .cta-band__inner { display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; padding: 52px 56px; background: var(--acid); color: #05080f; }
+    .cta-band h2 { color: #05080f; }
+    .cta-band .lead { color: #24330c; }
+    .cta-band .btn { background: #05080f; color: var(--acid); }
+    .cta-band .btn:hover { background: #16210b; box-shadow: 0 10px 28px rgba(5, 8, 15, .28); }
+
+    /* ===== Футер ===== */
+    .site-footer { border-top: 1px solid var(--line); padding: 64px 0 30px; background: #070c15; }
+    .footer__grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 40px; }
+    .footer__brand p { margin-top: 16px; max-width: 280px; font-size: 14px; color: var(--muted); }
+    .footer h4 { margin: 0 0 16px; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--acid); }
+    .footer__links { display: grid; gap: 10px; }
+    .footer__links a { font-size: 14px; color: #b8c5d8; transition: color .2s; }
+    .footer__links a:hover { color: var(--acid); }
+    .legal { margin-top: 46px; padding-top: 22px; border-top: 1px solid var(--line); font-family: "JetBrains Mono", monospace; font-size: 11px; line-height: 1.8; color: var(--muted); }
+    .legal p + p { margin-top: 12px; }
+    .legal strong { color: var(--text); font-weight: 700; }
+
+    /* ===== Адаптив ===== */
+    @media (max-width: 1000px) {
+      .hero__grid, .security__grid { grid-template-columns: 1fr; gap: 52px; }
+      .features__grid, .pricing__grid { grid-template-columns: repeat(2, 1fr); }
+      .metrics__grid { grid-template-columns: repeat(2, 1fr); }
+      .metric:nth-child(2) { border-right: 0; }
+      .metric:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+    }
+
+    @media (max-width: 760px) {
+      .burger { display: block; }
+      .nav {
+        position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 0;
+        padding: 0 24px; max-height: 0; overflow: hidden; background: #080d17;
+        border-bottom: 1px solid transparent; opacity: 0; visibility: hidden; transform: translateY(-6px);
+        transition: max-height .3s var(--ease), padding .3s, opacity .25s, visibility .25s;
+      }
+      .nav.is-open { max-height: 260px; padding: 6px 24px 16px; border-bottom-color: var(--line); opacity: 1; visibility: visible; transform: none; }
+      .nav a { padding: 13px 0; font-size: 13px; border-bottom: 1px solid var(--line); }
+      .header__actions .btn { display: none; }
+      .steps { grid-template-columns: 1fr; gap: 28px; }
+      .steps::before { top: 18px; bottom: 18px; left: 22px; right: auto; width: 1px; height: auto; border-top: 0; border-left: 1px dashed #2f4160; }
+      .footer__grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .container { width: min(100% - 32px, 1180px); }
+      .section { padding: 72px 0; }
+      .hero { padding: 68px 0 64px; }
+      h1 { font-size: clamp(2.6rem, 11vw, 3.6rem); }
+      .features__grid, .pricing__grid, .footer__grid { grid-template-columns: 1fr; }
+      .hero__actions .btn, .cta-band .btn { width: 100%; }
+      .cta-band__inner { padding: 36px 24px; }
+      .terminal { box-shadow: 10px 10px 0 rgba(200, 255, 77, .06); }
+      .terminal__body { padding: 18px; }
+      .terminal__tiles { grid-template-columns: 1fr; }
+      .terminal__tiles div { border-right: 0; border-bottom: 1px solid var(--line); }
+      .terminal__tiles div:last-child { border-bottom: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+      .reveal { opacity: 1; transform: none; }
+      .ticker__track { animation: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">К содержанию</a>
+
+  <!-- Тикер: приём «рыночного терминала», противоположный спокойной клинике -->
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker__track">
+      <div class="ticker__group">
+        <span class="ticker__item">BTC/USD <b>67 420,18</b> <em>+1,24%</em></span>
+        <span class="ticker__item">USD/RUB <b>92,41</b> <span class="down">−0,18%</span></span>
+        <span class="ticker__item">S&amp;P 500 <b>5 318,42</b> <em>+0,61%</em></span>
+        <span class="ticker__item">ЗОЛОТО <b>2 372,60</b> <em>+0,34%</em></span>
+        <span class="ticker__item">API <b>42 мс</b> <em>ONLINE</em></span>
+      </div>
+      <div class="ticker__group">
+        <span class="ticker__item">BTC/USD <b>67 420,18</b> <em>+1,24%</em></span>
+        <span class="ticker__item">USD/RUB <b>92,41</b> <span class="down">−0,18%</span></span>
+        <span class="ticker__item">S&amp;P 500 <b>5 318,42</b> <em>+0,61%</em></span>
+        <span class="ticker__item">ЗОЛОТО <b>2 372,60</b> <em>+0,34%</em></span>
+        <span class="ticker__item">API <b>42 мс</b> <em>ONLINE</em></span>
+      </div>
+    </div>
+  </div>
+
+  <header class="site-header" id="top">
+    <div class="container header__inner">
+      <!-- ЗАМЕНИТЬ: название продукта -->
+      <a class="logo" href="#top"><span class="logo__mark" aria-hidden="true">N</span>[Название]</a>
+
+      <button class="burger" type="button" aria-label="Открыть меню" aria-expanded="false" aria-controls="site-nav">
+        <span></span><span></span>
+      </button>
+
+      <nav class="nav" id="site-nav" aria-label="Основная навигация">
+        <a href="#features">Возможности</a>
+        <a href="#security">Безопасность</a>
+        <a href="#pricing">Тарифы</a>
+      </nav>
+
+      <div class="header__actions">
+        <a class="btn btn--acid" href="#pricing">Открыть счёт</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ===== HERO ===== -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero__grid">
+        <div class="reveal">
+          <span class="eyebrow">Личные финансы / инвестиции</span>
+          <h1 id="hero-title" class="display">Деньги под контролем — <em><u>без сюрпризов</u></em></h1>
+          <p class="lead">Учёт расходов, бюджеты и инвестиции в одном окне. Никаких скрытых комиссий и непонятных графиков — только цифры, которым можно верить.</p>
+          <div class="hero__actions">
+            <a class="btn btn--acid" href="#pricing">Попробовать бесплатно <span aria-hidden="true">→</span></a>
+            <a class="btn btn--line" href="#how">Как это работает</a>
+          </div>
+          <div class="hero__status">
+            <span><i aria-hidden="true"></i> СИСТЕМА: OK</span>
+            <span>ШИФРОВАНИЕ: TLS 1.3</span>
+            <span>ОБСЛУЖИВАНИЕ: 0 ₽</span>
+          </div>
+        </div>
+
+        <!-- ЗАМЕНИТЬ: реальный скриншот дашборда. Сейчас — терминал на CSS -->
+        <div class="terminal reveal" role="img" aria-label="Терминал с обзором счёта: баланс 1 284 650 рублей, столбчатый график, статистика и последние операции">
+          <div class="terminal__bar">
+            <span>~/finance/dashboard — live</span>
+            <span class="terminal__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          </div>
+          <div class="terminal__body">
+            <p class="terminal__prompt"><b>$</b> finance overview --period=month</p>
+
+            <div class="terminal__balance">
+              <small>Общий баланс</small>
+              <strong>₽ 1 284 650,80</strong>
+              <span class="terminal__delta">+4,8% / 30 ДНЕЙ</span>
+            </div>
+
+            <div class="bars" aria-hidden="true">
+              <i class="bars__bar" style="--h:32%"></i><i class="bars__bar" style="--h:44%"></i>
+              <i class="bars__bar" style="--h:38%"></i><i class="bars__bar" style="--h:57%"></i>
+              <i class="bars__bar" style="--h:49%"></i><i class="bars__bar" style="--h:66%"></i>
+              <i class="bars__bar" style="--h:58%"></i><i class="bars__bar" style="--h:74%"></i>
+              <i class="bars__bar" style="--h:62%"></i><i class="bars__bar" style="--h:81%"></i>
+              <i class="bars__bar" style="--h:70%"></i><i class="bars__bar" style="--h:86%"></i>
+              <i class="bars__bar" style="--h:76%"></i><i class="bars__bar" style="--h:92%"></i>
+              <i class="bars__bar" style="--h:84%"></i><i class="bars__bar" style="--h:96%"></i>
+              <i class="bars__bar" style="--h:88%"></i><i class="bars__bar" style="--h:100%"></i>
+              <i class="bars__bar" style="--h:91%"></i><i class="bars__bar" style="--h:98%"></i>
+            </div>
+            <div class="bars__axis" aria-hidden="true"><span>01.03</span><span>10.03</span><span>20.03</span><span>31.03</span></div>
+
+            <div class="terminal__tiles">
+              <div><small>Доходы</small><b>₽ 184 300</b></div>
+              <div><small>Расходы</small><b>₽ 96 720</b></div>
+              <div><small>Портфель</small><b>+8,2%</b></div>
+            </div>
+
+            <ul class="terminal__log">
+              <li><span>ФРИЛАНС · МАРТ</span><b class="plus">+ ₽ 42 000</b></li>
+              <li><span>ДИВИДЕНДЫ</span><b class="plus">+ ₽ 8 640</b></li>
+              <li><span>ПРОДУКТЫ</span><b>− ₽ 6 180</b></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== МЕТРИКИ ===== -->
+    <section class="metrics" aria-label="Показатели сервиса">
+      <div class="container metrics__grid">
+        <div class="metric reveal"><strong>99,9%</strong><span>uptime за год</span></div>
+        <div class="metric reveal"><strong>2 млн</strong><span>операций в месяц</span></div>
+        <div class="metric reveal"><strong>&lt;100 мс</strong><span>отклик API</span></div>
+        <div class="metric reveal"><strong>0 ₽</strong><span>за обслуживание</span></div>
+      </div>
+    </section>
+
+    <!-- ===== ВОЗМОЖНОСТИ ===== -->
+    <section class="section features" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <div class="section__head reveal">
+          <span class="eyebrow">// 01 — Возможности</span>
+          <h2 id="features-title" class="display">Всё, что нужно для денег</h2>
+        </div>
+
+        <div class="features__grid">
+          <article class="feature reveal">
+            <span class="feature__num">01 / УЧЁТ</span>
+            <div class="feature__icon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="18" height="13" rx="1"/><path d="M3 10h18M16 15h2"/></svg></div>
+            <h3>Учёт расходов</h3>
+            <p>Операции подтягиваются автоматически и раскладываются по категориям без ручного ввода.</p>
+          </article>
+
+          <article class="feature reveal">
+            <span class="feature__num">02 / ПЛАНИРОВАНИЕ</span>
+            <div class="feature__icon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+            <h3>Бюджеты</h3>
+            <p>Ставьте лимиты по категориям и получайте уведомление, пока бюджет не превышен.</p>
+          </article>
+
+          <article class="feature reveal">
+            <span class="feature__num">03 / РОСТ</span>
+            <div class="feature__icon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></div>
+            <h3>Инвестиции</h3>
+            <p>Портфель, доходность и риски в понятных цифрах — без сложных терминов.</p>
+          </article>
+
+          <article class="feature reveal">
+            <span class="feature__num">04 / ЗАЩИТА</span>
+            <div class="feature__icon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l8 4v5c0 5-3.4 8.4-8 9-4.6-.6-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <h3>Безопасность</h3>
+            <p>Шифрование, двухфакторная защита и уведомления о каждом входе в аккаунт.</p>
+          </article>
+
+          <article class="feature reveal">
+            <span class="feature__num">05 / ОТЧЁТЫ</span>
+            <div class="feature__icon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h9l5 5v13H6z"/><path d="M14 3v6h6M9 13h7M9 17h5"/></svg></div>
+            <h3>Отчёты</h3>
+            <p>Готовые сводки за месяц и год: экспорт в PDF и CSV в один клик.</p>
+          </article>
+
+          <article class="feature reveal">
+            <span class="feature__num">06 / СВЯЗИ</span>
+            <div class="feature__icon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 15l6-6M7 12l-3 3 4 4M17 12l3-3-4-4"/></svg></div>
+            <h3>Интеграции</h3>
+            <p>Банки, брокеры и бухгалтерия — данные собираются в одном окне.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== БЕЗОПАСНОСТЬ ===== -->
+    <section class="section security" id="security" aria-labelledby="security-title">
+      <div class="container security__grid">
+        <div class="reveal">
+          <span class="eyebrow">// 02 — Защита</span>
+          <h2 id="security-title" class="display">Надёжность как протокол</h2>
+          <p class="lead" style="margin-top:20px;">Деньги требуют доверия. Поэтому мы прозрачно говорим о том, как устроена защита и кто контролирует нашу работу.</p>
+          <div class="security__art" aria-hidden="true"><span class="s1"></span><span class="s2"></span><span class="s3"></span><span class="s4"></span></div>
+        </div>
+
+        <div class="security__list">
+          <article class="secure-item reveal">
+            <span class="secure-item__mark">[x]</span>
+            <div><h3>Шифрование данных</h3><p>Трафик защищён по TLS 1.3, персональные данные шифруются в хранилище.</p></div>
+          </article>
+          <article class="secure-item reveal">
+            <span class="secure-item__mark">[x]</span>
+            <div><h3>Лицензия и надзор</h3><p><!-- ЗАМЕНИТЬ: номер лицензии -->Работаем по лицензии Банка России № 0000 от 01.01.2020.</p></div>
+          </article>
+          <article class="secure-item reveal">
+            <span class="secure-item__mark">[x]</span>
+            <div><h3>Страхование вкладов</h3><p>Средства клиентов застрахованы в рамках действующего законодательства.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== КАК ЭТО РАБОТАЕТ ===== -->
+    <section class="section" id="how" aria-labelledby="how-title">
+      <div class="container">
+        <div class="section__head reveal">
+          <span class="eyebrow">// 03 — Процесс</span>
+          <h2 id="how-title" class="display">Три шага до полной картины</h2>
+        </div>
+        <div class="steps">
+          <div class="step reveal"><span class="step__num">[01]</span><h3>Подключите счета</h3><p>Банки и брокеры подключаются за пару минут через безопасный обмен данными.</p></div>
+          <div class="step reveal"><span class="step__num">[02]</span><h3>Настройте цели</h3><p>Выберите бюджет, лимиты и инвестиционную стратегию под свои задачи.</p></div>
+          <div class="step reveal"><span class="step__num">[03]</span><h3>Следите за результатом</h3><p>Отчёты и уведомления показывают динамику без ежедневного контроля.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ТАРИФЫ ===== -->
+    <section class="section" id="pricing" aria-labelledby="pricing-title">
+      <div class="container">
+        <div class="section__head reveal">
+          <span class="eyebrow">// 04 — Доступ</span>
+          <h2 id="pricing-title" class="display">Прозрачные условия</h2>
+        </div>
+
+        <!-- ЗАМЕНИТЬ: цены и состав тарифов -->
+        <div class="pricing__grid">
+          <article class="plan reveal">
+            <h3>Старт</h3>
+            <p class="plan__price">0 ₽ <small>/ месяц</small></p>
+            <ul>
+              <li>Учёт расходов и доходов</li>
+              <li>До 3 подключённых счетов</li>
+              <li>Базовые отчёты</li>
+            </ul>
+            <a class="btn btn--line" href="#cta">Начать бесплатно</a>
+          </article>
+
+          <article class="plan plan--featured reveal">
+            <span class="plan__badge">Популярный</span>
+            <h3>Про</h3>
+            <p class="plan__price">490 ₽ <small>/ месяц</small></p>
+            <ul>
+              <li>Всё из тарифа «Старт»</li>
+              <li>Безлимитные счета и бюджеты</li>
+              <li>Инвестиционный портфель</li>
+              <li>Экспорт в PDF и CSV</li>
+            </ul>
+            <a class="btn btn--acid" href="#cta">Выбрать «Про»</a>
+          </article>
+
+          <article class="plan reveal">
+            <h3>Бизнес</h3>
+            <p class="plan__price">1 490 ₽ <small>/ месяц</small></p>
+            <ul>
+              <li>Всё из тарифа «Про»</li>
+              <li>До 5 пользователей</li>
+              <li>Персональный менеджер</li>
+              <li>Приоритетная поддержка</li>
+            </ul>
+            <a class="btn btn--line" href="#cta">Выбрать «Бизнес»</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CTA ===== -->
+    <section class="cta-band" id="cta" aria-labelledby="cta-title">
+      <div class="container">
+        <div class="cta-band__inner reveal">
+          <div>
+            <h2 id="cta-title" class="display">Начните бесплатно</h2>
+            <p class="lead">Первый счёт — без комиссии и без привязки карты.</p>
+          </div>
+          <a class="btn" href="#pricing">Открыть счёт <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <a class="logo" href="#top"><span class="logo__mark" aria-hidden="true">N</span>[Название]</a>
+          <!-- ЗАМЕНИТЬ: описание компании -->
+          <p>Сервис для управления личными финансами и инвестициями. Просто, прозрачно, надёжно.</p>
+        </div>
+        <div>
+          <h4>Продукт</h4>
+          <div class="footer__links">
+            <a href="#features">Возможности</a>
+            <a href="#security">Безопасность</a>
+            <a href="#pricing">Тарифы</a>
+          </div>
+        </div>
+        <div>
+          <h4>Компания</h4>
+          <div class="footer__links">
+            <!-- ЗАМЕНИТЬ: реальные ссылки -->
+            <a href="#top">О нас</a>
+            <a href="#top">Лицензия</a>
+            <a href="#top">Контакты</a>
+          </div>
+        </div>
+        <div>
+          <h4>Поддержка</h4>
+          <div class="footer__links">
+            <a href="#top">База знаний</a>
+            <a href="#top">Связаться</a>
+            <a href="#top">Статус сервиса</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ЗАМЕНИТЬ: реальные юридические данные и номер лицензии -->
+      <div class="legal">
+        <p><strong>Лицензия:</strong> № 0000 от 01.01.2020, выдана Банком России. Наименование лицензиата — ЗАМЕНИТЬ. Адрес: ЗАМЕНИТЬ.</p>
+        <p>Информация на сайте носит справочный характер и <strong>не является инвестиционной рекомендацией</strong>, публичной офертой или обещанием доходности. Инвестиции связаны с риском потерять часть вложенных средств. Доходность за прошлые периоды не гарантирует доходность в будущем. Ознакомьтесь с условиями и рисками перед открытием счёта.</p>
+        <p>© <span id="year">2026</span> [Название]. Все права защищены.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var burger = document.querySelector('.burger');
+      var nav = document.getElementById('site-nav');
+
+      function closeMenu() {
+        nav.classList.remove('is-open');
+        burger.setAttribute('aria-expanded', 'false');
+        burger.setAttribute('aria-label', 'Открыть меню');
+      }
+
+      burger.addEventListener('click', function () {
+        var open = nav.classList.toggle('is-open');
+        burger.setAttribute('aria-expanded', String(open));
+        burger.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+      });
+      nav.addEventListener('click', function (e) { if (e.target.closest('a')) closeMenu(); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && nav.classList.contains('is-open')) { closeMenu(); burger.focus(); }
+      });
+      window.addEventListener('resize', function () {
+        if (window.innerWidth > 760 && nav.classList.contains('is-open')) closeMenu();
+      });
+
+      var items = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) { entry.target.classList.add('is-visible'); io.unobserve(entry.target); }
+          });
+        }, { threshold: .08, rootMargin: '0px 0px -40px 0px' });
+        items.forEach(function (el) { io.observe(el); });
+      } else {
+        items.forEach(function (el) { el.classList.add('is-visible'); });
+      }
+
+      document.getElementById('year').textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>
